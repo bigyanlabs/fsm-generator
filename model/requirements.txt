@@ -1,0 +1,25 @@
+# Core Dependencies
+tensorflow
+numpy
+scikit-learn
+
+# Data Processing
+pandas
+
+# Visualization
+matplotlib
+
+# Utilities
+jupyter
+
+# Optional: For GPU support (CUDA)
+# tensorflow-gpu==2.15.0
+
+# Optional: For better progress bars
+tqdm
+
+# Optional: For TensorBoard visualization
+tensorboard
+
+# Note: Make sure you have CUDA and cuDNN installed if using GPU
+# CUDA 11.8 or 12.x recommended for TensorFlow 2.15.0

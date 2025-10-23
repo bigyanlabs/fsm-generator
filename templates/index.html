@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FSM State Diagram Generator</title>
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --error: #ef4444;
+            --bg-light: #f8fafc;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            padding: 40px;
+            text-align: center;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 40px;
+        }
+
+        .input-panel, .output-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-icon {
+            font-size: 1.5rem;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 150px;
+            transition: all 0.3s;
+            background: var(--bg-light);
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .examples {
+            margin-top: 20px;
+        }
+
+        .examples-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .example-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .example-card {
+            background: var(--bg-light);
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .example-card:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateX(4px);
+            border-color: var(--primary);
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--bg-light);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .output-container {
+            background: var(--bg-light);
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: visible;
+        }
+
+        .placeholder {
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .placeholder-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        #diagramContainer {
+            width: 100%;
+            height: 100%;
+            display: none;
+            position: relative;
+        }
+
+        #diagramContainer.show {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .diagram-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            justify-content: flex-end;
+        }
+
+        .control-btn {
+            background: white;
+            border: 2px solid var(--border);
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        #diagram {
+            flex: 1;
+            min-height: 350px;
+        }
+
+        .state-node {
+            fill: white;
+            stroke: var(--primary);
+            stroke-width: 3;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .state-node:hover {
+            fill: rgba(102, 126, 234, 0.1);
+            filter: drop-shadow(0 4px 8px rgba(102, 126, 234, 0.3));
+        }
+
+        .state-text {
+            font-size: 14px;
+            font-weight: 600;
+            fill: var(--text-primary);
+            pointer-events: none;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        .transition-path {
+            fill: none;
+            stroke: var(--text-secondary);
+            stroke-width: 2;
+            marker-end: url(#arrowhead);
+        }
+
+        .transition-label {
+            font-size: 11px;
+            fill: var(--text-secondary);
+            font-weight: 500;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        .raw-output {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+            margin-top: 16px;
+            display: none;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .raw-output.show {
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+        }
+
+        .spinner {
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #fee;
+            border-left: 4px solid var(--error);
+            color: #991b1b;
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 968px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .main-content {
+                padding: 20px;
+            }
+
+            .header {
+                padding: 30px 20px;
+            }
+
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 FSM Generator</h1>
+            <p>Transform natural language into visual state diagrams</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Input Panel -->
+            <div class="input-panel">
+                <div class="panel-title">
+                    <span class="panel-icon">📝</span>
+                    Describe Your System
+                </div>
+                
+                <textarea 
+                    id="description" 
+                    placeholder="E.g., A vending machine accepts coins until reaching 10 rupees then dispenses item..."
+                ></textarea>
+
+                <div class="examples">
+                    <div class="examples-title">💡 Quick Examples</div>
+                    <div class="example-grid" id="exampleGrid"></div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-primary" id="generateBtn">
+                        <span>✨</span>
+                        Generate Diagram
+                    </button>
+                    <button class="btn-secondary" id="clearBtn">
+                        <span>🗑️</span>
+                        Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Output Panel -->
+            <div class="output-panel">
+                <div class="panel-title">
+                    <span class="panel-icon">📊</span>
+                    State Diagram
+                </div>
+
+                <div class="output-container" id="outputContainer">
+                    <div class="placeholder" id="placeholder">
+                        <div class="placeholder-icon">🎨</div>
+                        <p>Your FSM diagram will appear here</p>
+                    </div>
+
+                    <div id="diagramContainer">
+                        <div class="diagram-controls">
+                            <button class="control-btn" id="downloadBtn">💾 Download</button>
+                            <button class="control-btn" id="toggleRawBtn">📋 Raw</button>
+                        </div>
+                        <svg id="diagram" width="100%" height="100%" viewBox="0 0 600 400"></svg>
+                    </div>
+                </div>
+
+                <div class="raw-output" id="rawOutput"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const descriptionInput = document.getElementById('description');
+        const generateBtn = document.getElementById('generateBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const outputContainer = document.getElementById('outputContainer');
+        const placeholder = document.getElementById('placeholder');
+        const diagramContainer = document.getElementById('diagramContainer');
+        const diagram = document.getElementById('diagram');
+        const rawOutput = document.getElementById('rawOutput');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const toggleRawBtn = document.getElementById('toggleRawBtn');
+        const exampleGrid = document.getElementById('exampleGrid');
+
+        const examples = [
+            "A traffic light cycles through colors",
+            "A vending machine accepts coins",
+            "A door lock with key toggle",
+            "An elevator between 3 floors",
+        ];
+
+        // Populate examples
+        examples.forEach(example => {
+            const card = document.createElement('div');
+            card.className = 'example-card';
+            card.textContent = example;
+            card.onclick = () => {
+                descriptionInput.value = example;
+                descriptionInput.focus();
+            };
+            exampleGrid.appendChild(card);
+        });
+
+        // Parse FSM output with better error handling
+        function parseFSM(text) {
+            console.log('Parsing FSM:', text);
+            const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+            let states = [];
+            let transitions = [];
+
+            lines.forEach(line => {
+                if (line.toLowerCase().startsWith('states:')) {
+                    const statesText = line.replace(/states:/i, '').trim();
+                    states = statesText.split(/[,|]/).map(s => s.trim()).filter(s => s && s.length > 0);
+                } else if (line.toLowerCase().startsWith('transitions:')) {
+                    const transText = line.replace(/transitions:/i, '').trim();
+                    const transList = transText.split(',').map(t => t.trim());
+                    
+                    transList.forEach(trans => {
+                        // Match patterns: state1 --label--> state2 OR state1 -> state2
+                        const match = trans.match(/(\w+)\s*(?:--(.+?)-->|->)\s*(\w+)/);
+                        if (match) {
+                            const fromState = match[1].trim();
+                            const toState = match[3].trim();
+                            const label = match[2] ? match[2].trim().replace(/_/g, ' ') : '';
+                            
+                            transitions.push({
+                                from: fromState,
+                                to: toState,
+                                label: label
+                            });
+                        }
+                    });
+                }
+            });
+
+            console.log('Parsed states:', states);
+            console.log('Parsed transitions:', transitions);
+
+            return { states, transitions };
+        }
+
+        // Draw FSM diagram with improved layout
+        function drawDiagram(fsm) {
+            const { states, transitions } = fsm;
+            
+            if (states.length === 0) {
+                throw new Error('No states found in FSM output');
+            }
+
+            const width = 600;
+            const height = 400;
+            const nodeRadius = 45;
+            const padding = 80;
+
+            // Clear previous diagram
+            diagram.innerHTML = '';
+
+            // Add arrow marker definition
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+            marker.setAttribute('id', 'arrowhead');
+            marker.setAttribute('markerWidth', '10');
+            marker.setAttribute('markerHeight', '10');
+            marker.setAttribute('refX', '9');
+            marker.setAttribute('refY', '3');
+            marker.setAttribute('orient', 'auto');
+            
+            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            polygon.setAttribute('points', '0 0, 10 3, 0 6');
+            polygon.setAttribute('fill', '#64748b');
+            
+            marker.appendChild(polygon);
+            defs.appendChild(marker);
+            diagram.appendChild(defs);
+
+            // Calculate positions (circular layout)
+            const positions = {};
+            const angleStep = (2 * Math.PI) / states.length;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = Math.min(width - padding * 2, height - padding * 2) / 2;
+
+            states.forEach((state, i) => {
+                const angle = i * angleStep - Math.PI / 2; // Start from top
+                positions[state] = {
+                    x: centerX + radius * Math.cos(angle),
+                    y: centerY + radius * Math.sin(angle)
+                };
+            });
+
+            // Draw transitions first (so they appear behind nodes)
+            const transGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            
+            transitions.forEach(trans => {
+                const from = positions[trans.from];
+                const to = positions[trans.to];
+                
+                if (!from || !to) {
+                    console.warn(`Invalid transition: ${trans.from} -> ${trans.to}`);
+                    return;
+                }
+
+                if (trans.from === trans.to) {
+                    // Self-loop
+                    const loopRadius = 40;
+                    const angle = Math.atan2(from.y - centerY, from.x - centerX);
+                    const loopX = from.x + Math.cos(angle) * (nodeRadius + loopRadius);
+                    const loopY = from.y + Math.sin(angle) * (nodeRadius + loopRadius);
+                    
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    const startX = from.x + Math.cos(angle - 0.3) * nodeRadius;
+                    const startY = from.y + Math.sin(angle - 0.3) * nodeRadius;
+                    const endX = from.x + Math.cos(angle + 0.3) * nodeRadius;
+                    const endY = from.y + Math.sin(angle + 0.3) * nodeRadius;
+                    
+                    const d = `M ${startX},${startY} Q ${loopX},${loopY} ${endX},${endY}`;
+                    path.setAttribute('d', d);
+                    path.setAttribute('class', 'transition-path');
+                    transGroup.appendChild(path);
+
+                    // Label
+                    if (trans.label) {
+                        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        label.setAttribute('x', loopX);
+                        label.setAttribute('y', loopY);
+                        label.setAttribute('class', 'transition-label');
+                        label.textContent = trans.label;
+                        transGroup.appendChild(label);
+                    }
+                } else {
+                    // Regular transition
+                    const dx = to.x - from.x;
+                    const dy = to.y - from.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    const fromX = from.x + (dx / dist) * nodeRadius;
+                    const fromY = from.y + (dy / dist) * nodeRadius;
+                    const toX = to.x - (dx / dist) * (nodeRadius + 5);
+                    const toY = to.y - (dy / dist) * (nodeRadius + 5);
+
+                    // Draw line
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', fromX);
+                    line.setAttribute('y1', fromY);
+                    line.setAttribute('x2', toX);
+                    line.setAttribute('y2', toY);
+                    line.setAttribute('class', 'transition-path');
+                    transGroup.appendChild(line);
+
+                    // Label
+                    if (trans.label) {
+                        const midX = (fromX + toX) / 2;
+                        const midY = (fromY + toY) / 2;
+                        
+                        // Offset label perpendicular to line
+                        const perpX = -dy / dist * 15;
+                        const perpY = dx / dist * 15;
+                        
+                        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        label.setAttribute('x', midX + perpX);
+                        label.setAttribute('y', midY + perpY);
+                        label.setAttribute('class', 'transition-label');
+                        label.textContent = trans.label;
+                        transGroup.appendChild(label);
+                    }
+                }
+            });
+            
+            diagram.appendChild(transGroup);
+
+            // Draw states on top
+            states.forEach(state => {
+                const pos = positions[state];
+                
+                const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                
+                // Circle
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                circle.setAttribute('cx', pos.x);
+                circle.setAttribute('cy', pos.y);
+                circle.setAttribute('r', nodeRadius);
+                circle.setAttribute('class', 'state-node');
+                group.appendChild(circle);
+
+                // Text with word wrapping for long state names
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', pos.x);
+                text.setAttribute('y', pos.y);
+                text.setAttribute('class', 'state-text');
+                
+                const words = state.split('_');
+                if (words.length > 2) {
+                    // Split into multiple lines
+                    const tspan1 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+                    tspan1.setAttribute('x', pos.x);
+                    tspan1.setAttribute('dy', '-0.3em');
+                    tspan1.textContent = words.slice(0, Math.ceil(words.length / 2)).join('_');
+                    text.appendChild(tspan1);
+                    
+                    const tspan2 = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+                    tspan2.setAttribute('x', pos.x);
+                    tspan2.setAttribute('dy', '1.2em');
+                    tspan2.textContent = words.slice(Math.ceil(words.length / 2)).join('_');
+                    text.appendChild(tspan2);
+                } else {
+                    text.textContent = state;
+                }
+                
+                group.appendChild(text);
+                diagram.appendChild(group);
+            });
+        }
+
+        // Generate FSM with proper state reset
+        generateBtn.addEventListener('click', async () => {
+            const description = descriptionInput.value.trim();
+
+            if (!description) {
+                alert('Please enter a description');
+                return;
+            }
+
+            // Reset UI state
+            generateBtn.disabled = true;
+            generateBtn.innerHTML = '<span>⏳</span> Generating...';
+            
+            // Show loading state
+            placeholder.style.display = 'flex';
+            placeholder.innerHTML = '<div class="loading"><div class="spinner"></div><p>Generating your diagram...</p></div>';
+            
+            diagramContainer.classList.remove('show');
+            rawOutput.classList.remove('show');
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ description }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const fsm = parseFSM(data.output);
+                    
+                    if (fsm.states.length === 0) {
+                        throw new Error('No states found in the generated FSM');
+                    }
+                    
+                    rawOutput.textContent = data.output;
+                    
+                    drawDiagram(fsm);
+                    
+                    placeholder.style.display = 'none';
+                    diagramContainer.classList.add('show');
+                } else {
+                    placeholder.style.display = 'flex';
+                    placeholder.innerHTML = '<div class="error">❌ Error: ' + (data.error || 'Unknown error') + '</div>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                placeholder.style.display = 'flex';
+                placeholder.innerHTML = '<div class="error">❌ Error: ' + error.message + '</div>';
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<span>✨</span> Generate Diagram';
+            }
+        });
+
+        // Clear
+        clearBtn.addEventListener('click', () => {
+            descriptionInput.value = '';
+            placeholder.style.display = 'flex';
+            placeholder.innerHTML = '<div class="placeholder-icon">🎨</div><p>Your FSM diagram will appear here</p>';
+            diagramContainer.classList.remove('show');
+            rawOutput.classList.remove('show');
+            diagram.innerHTML = '';
+        });
+
+        // Toggle raw output
+        toggleRawBtn.addEventListener('click', () => {
+            rawOutput.classList.toggle('show');
+        });
+
+        // Download SVG
+        downloadBtn.addEventListener('click', () => {
+            const svgData = new XMLSerializer().serializeToString(diagram);
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'fsm-diagram.svg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        });
+
+        // Enter key to generate
+        descriptionInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                generateBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>
