@@ -10,10 +10,14 @@ CORS(app)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 client = genai.Client(api_key=GEMINI_API_KEY)
+# models = client.models.list()
+# print("List of available models:")
 
+# for m in models:
+#     print(m.name)
 
 def generate(description):
-    """Generate FSM from text description using Gemini"""
+    """Generate FSM from text description using Gemini with failsafe"""
     
     prompt = f"""You are an FSM (Finite State Machine) generator. Given a text description, generate a formal FSM specification.
 
@@ -50,22 +54,48 @@ states: locked, unlocked
 transitions: locked --key_turn--> unlocked, unlocked --key_turn--> locked
 
 Now generate for the given input. Only output the states and transitions lines, nothing else."""
-
-    response = client.models.generate_content(
-        model="gemini-2.5-pro",
-        contents=prompt
-    )
     
-    result = response.text.strip()
+    models_to_try = [
+        "gemini-2.5-flash",
+        "gemini-2.5-pro"
+    ]
     
-    # Clean up the result
-    lines = []
-    for line in result.split('\n'):
-        line = line.strip()
-        if line.startswith('states:') or line.startswith('transitions:'):
-            lines.append(line)
+    last_error = None
     
-    return '\n'.join(lines) if lines else result
+    for model_name in models_to_try:
+        try:
+            print(f"Attempting to use model: {model_name}")
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt
+            )
+            
+            result = response.text.strip()
+            
+            # Clean up the result
+            lines = []
+            for line in result.split('\n'):
+                line = line.strip()
+                if line.startswith('states:') or line.startswith('transitions:'):
+                    lines.append(line)
+            
+            cleaned_result = '\n'.join(lines) if lines else result
+            print(f"✓ Successfully generated using {model_name}")
+            return cleaned_result
+            
+        except Exception as e:
+            error_msg = str(e).lower()
+            print(f"✗ Model {model_name} failed: {str(e)}")
+            last_error = e
+            
+            if any(code in error_msg for code in ['503', '429', 'overload', 'rate limit', 'quota', 'resource exhausted']):
+                print(f"  → Detected overload/rate limit, trying next model...")
+                continue
+            else:
+                print(f"  → Non-overload error, trying next model anyway...")
+                continue
+    
+    raise Exception(f"All models failed. Last error: {str(last_error)}")
 
 
 @app.route('/')
@@ -100,7 +130,7 @@ def generate_fsm():
         print(f"Error: {str(e)}")
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': f'Failed to generate FSM: {str(e)}'
         }), 500
 
 
@@ -128,10 +158,7 @@ def health_check():
 
 if __name__ == '__main__':
     if not GEMINI_API_KEY:
-        print("⚠️  Warning: GEMINI_API_KEY not set!")
-        print("Set it with: export GEMINI_API_KEY='your_key_here'")
-    print("\n🚀 Server starting...")
-    print("📍 Local:   http://localhost:5000")
-    print("\n" + "="*80 + "\n")
-    
+        print(" Warning: GEMINI_API_KEY not set!")
+    print("\n Server starting")
+    print("Local:   http://localhost:5000")
     app.run(debug=True, host='0.0.0.0', port=5000)

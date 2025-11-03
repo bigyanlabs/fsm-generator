@@ -3,19 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FSM State Diagram Generator</title>
+    <title>FSM Generator - State Diagram Tool</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #667eea;
-            --primary-dark: #5568d3;
-            --secondary: #764ba2;
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --secondary: #8b5cf6;
+            --accent: #ec4899;
             --success: #10b981;
+            --warning: #f59e0b;
             --error: #ef4444;
-            --bg-light: #f8fafc;
-            --text-primary: #1e293b;
-            --text-secondary: #64748b;
-            --border: #e2e8f0;
-            --shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            --bg-dark: #0a0e1a;
+            --bg-darker: #050711;
+            --card-bg: #151925;
+            --card-hover: #1a1f2e;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border: #1f2937;
+            --border-light: #374151;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.6);
+            --glow: 0 0 20px rgba(99, 102, 241, 0.3);
         }
 
         * {
@@ -25,45 +39,132 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-darker);
             min-height: 100vh;
-            padding: 20px;
+            padding: 0;
+            overflow-x: hidden;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Subtle grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+            opacity: 0.5;
+        }
+
+        /* Gradient orb */
+        body::after {
+            content: '';
+            position: fixed;
+            top: -300px;
+            right: -300px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1), transparent 70%);
+            border-radius: 50%;
+            z-index: -1;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(100px, 100px) scale(1.1); }
+            66% { transform: translate(-50px, 50px) scale(0.9); }
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1440px;
             margin: 0 auto;
-            background: white;
-            border-radius: 24px;
-            box-shadow: var(--shadow);
-            overflow: hidden;
+            padding: 40px 24px;
         }
 
         .header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            padding: 40px;
             text-align: center;
-            color: white;
+            padding: 80px 20px 60px;
+            position: relative;
+            margin-bottom: 40px;
+        }
+
+        .header-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            display: block;
         }
 
         .header h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
+            font-size: clamp(2.5rem, 6vw, 4rem);
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+        }
+
+        .header .gradient-text {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .header p {
-            font-size: 1.1rem;
-            opacity: 0.9;
+            font-size: clamp(1rem, 2vw, 1.125rem);
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+            font-weight: 400;
         }
 
         .main-content {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            padding: 40px;
+            gap: 32px;
+            margin-top: 20px;
+        }
+
+        .panel {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 32px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .panel:hover::before {
+            opacity: 1;
+        }
+
+        .panel:hover {
+            border-color: var(--border-light);
+            box-shadow: var(--shadow-lg);
         }
 
         .input-panel, .output-panel {
@@ -73,40 +174,49 @@
 
         .panel-title {
             font-size: 1.25rem;
-            font-weight: 700;
+            font-weight: 600;
             color: var(--text-primary);
-            margin-bottom: 20px;
+            margin-bottom: 24px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            letter-spacing: -0.01em;
         }
 
         .panel-icon {
-            font-size: 1.5rem;
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
         }
 
         textarea {
             width: 100%;
             padding: 16px;
-            border: 2px solid var(--border);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            font-size: 1rem;
-            font-family: inherit;
+            font-size: 0.95rem;
+            font-family: 'Space Grotesk', sans-serif;
             resize: vertical;
-            min-height: 150px;
-            transition: all 0.3s;
-            background: var(--bg-light);
+            min-height: 160px;
+            transition: all 0.2s ease;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        textarea::placeholder {
+            color: var(--text-muted);
         }
 
         textarea:focus {
             outline: none;
             border-color: var(--primary);
-            background: white;
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            background: var(--card-bg);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
 
         .examples {
-            margin-top: 20px;
+            margin-top: 24px;
         }
 
         .examples-title {
@@ -114,6 +224,8 @@
             font-weight: 600;
             color: var(--text-secondary);
             margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .example-grid {
@@ -122,88 +234,124 @@
         }
 
         .example-card {
-            background: var(--bg-light);
+            background: var(--bg-dark);
             padding: 12px 16px;
             border-radius: 10px;
             font-size: 0.875rem;
-            color: var(--text-primary);
+            color: var(--text-secondary);
             cursor: pointer;
-            transition: all 0.2s;
-            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .example-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--primary);
+            transform: scaleY(0);
+            transition: transform 0.2s ease;
+        }
+
+        .example-card:hover::before {
+            transform: scaleY(1);
         }
 
         .example-card:hover {
-            background: var(--primary);
-            color: white;
-            transform: translateX(4px);
+            background: var(--card-hover);
             border-color: var(--primary);
+            color: var(--text-primary);
+            transform: translateX(4px);
         }
 
         .button-group {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 12px;
-            margin-top: 20px;
+            margin-top: 24px;
         }
 
         button {
             padding: 14px 24px;
             border: none;
             border-radius: 10px;
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
+            font-family: 'Space Grotesk', sans-serif;
+            letter-spacing: 0.01em;
+        }
+
+        .btn-icon {
+            width: 18px;
+            height: 18px;
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            background: var(--primary);
             color: white;
+            box-shadow: var(--shadow-sm);
         }
 
         .btn-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
         }
 
         .btn-primary:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
         }
 
         .btn-secondary {
-            background: var(--bg-light);
+            background: var(--card-bg);
             color: var(--text-primary);
+            border: 1px solid var(--border);
         }
 
         .btn-secondary:hover {
-            background: var(--border);
+            background: var(--card-hover);
+            border-color: var(--border-light);
         }
 
         .output-container {
-            background: var(--bg-light);
+            background: var(--bg-dark);
             border-radius: 12px;
-            padding: 20px;
-            min-height: 400px;
+            padding: 24px;
+            min-height: 600px;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
             overflow: visible;
+            border: 1px solid var(--border);
         }
 
         .placeholder {
             text-align: center;
-            color: var(--text-secondary);
+            color: var(--text-muted);
+            font-size: 0.95rem;
         }
 
         .placeholder-icon {
-            font-size: 4rem;
-            margin-bottom: 16px;
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
             opacity: 0.3;
         }
 
@@ -212,6 +360,7 @@
             height: 100%;
             display: none;
             position: relative;
+            min-height: 550px;
         }
 
         #diagramContainer.show {
@@ -221,44 +370,48 @@
 
         .diagram-controls {
             display: flex;
-            gap: 8px;
-            margin-bottom: 12px;
+            gap: 10px;
+            margin-bottom: 16px;
             justify-content: flex-end;
         }
 
         .control-btn {
-            background: white;
-            border: 2px solid var(--border);
-            color: var(--text-primary);
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
             padding: 8px 16px;
             border-radius: 8px;
-            font-size: 0.875rem;
+            font-size: 0.85rem;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            font-family: 'Space Grotesk', sans-serif;
         }
 
         .control-btn:hover {
-            background: var(--primary);
-            color: white;
+            background: var(--card-hover);
+            color: var(--text-primary);
             border-color: var(--primary);
         }
 
         #diagram {
             flex: 1;
-            min-height: 350px;
+            min-height: 500px;
+            width: 100%;
         }
 
         .state-node {
-            fill: white;
+            fill: var(--card-bg);
             stroke: var(--primary);
-            stroke-width: 3;
+            stroke-width: 2;
             cursor: pointer;
             transition: all 0.3s;
         }
 
         .state-node:hover {
-            fill: rgba(102, 126, 234, 0.1);
-            filter: drop-shadow(0 4px 8px rgba(102, 126, 234, 0.3));
+            fill: var(--card-hover);
+            stroke: var(--primary-light);
+            filter: drop-shadow(0 4px 8px rgba(99, 102, 241, 0.3));
         }
 
         .state-text {
@@ -268,13 +421,15 @@
             pointer-events: none;
             text-anchor: middle;
             dominant-baseline: middle;
+            font-family: 'Space Grotesk', sans-serif;
         }
 
         .transition-path {
             fill: none;
-            stroke: var(--text-secondary);
+            stroke: var(--text-muted);
             stroke-width: 2;
             marker-end: url(#arrowhead);
+            opacity: 0.6;
         }
 
         .transition-label {
@@ -283,17 +438,18 @@
             font-weight: 500;
             text-anchor: middle;
             dominant-baseline: middle;
+            font-family: 'JetBrains Mono', monospace;
         }
 
         .raw-output {
-            background: white;
+            background: var(--bg-darker);
             padding: 16px;
-            border-radius: 8px;
-            border-left: 4px solid var(--primary);
-            font-family: 'Courier New', monospace;
-            font-size: 0.875rem;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
             line-height: 1.6;
-            color: var(--text-primary);
+            color: var(--text-secondary);
             margin-top: 16px;
             display: none;
             white-space: pre-wrap;
@@ -306,15 +462,16 @@
 
         .loading {
             text-align: center;
+            color: var(--text-secondary);
         }
 
         .spinner {
-            border: 4px solid var(--border);
-            border-top: 4px solid var(--primary);
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--primary);
             border-radius: 50%;
             width: 48px;
             height: 48px;
-            animation: spin 1s linear infinite;
+            animation: spin 0.8s linear infinite;
             margin: 0 auto 16px;
         }
 
@@ -324,11 +481,12 @@
         }
 
         .error {
-            background: #fee;
-            border-left: 4px solid var(--error);
-            color: #991b1b;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--error);
+            color: #fca5a5;
             padding: 16px;
-            border-radius: 8px;
+            border-radius: 10px;
+            font-size: 0.9rem;
         }
 
         @media (max-width: 968px) {
@@ -338,6 +496,18 @@
 
             .header h1 {
                 font-size: 2rem;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                padding: 24px;
             }
         }
 
@@ -350,6 +520,28 @@
                 padding: 30px 20px;
             }
 
+            .header h1 {
+                font-size: 1.75rem;
+            }
+
+            .panel-title {
+                font-size: 1.2rem;
+            }
+
+            textarea {
+                min-height: 140px;
+                font-size: 0.95rem;
+            }
+
+            button {
+                padding: 12px 20px;
+                font-size: 0.85rem;
+            }
+
+            .diagram-controls {
+                flex-wrap: wrap;
+            }
+
             .button-group {
                 grid-template-columns: 1fr;
             }
@@ -359,15 +551,37 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🤖 FSM Generator</h1>
+            <!-- Logo Icon -->
+            <svg class="header-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="30" cy="30" r="12" stroke="url(#grad1)" stroke-width="3" fill="none"/>
+                <circle cx="70" cy="30" r="12" stroke="url(#grad1)" stroke-width="3" fill="none"/>
+                <circle cx="50" cy="70" r="12" stroke="url(#grad1)" stroke-width="3" fill="none"/>
+                <path d="M 38 35 L 62 35" stroke="url(#grad1)" stroke-width="2" marker-end="url(#arrow)"/>
+                <path d="M 65 42 L 55 58" stroke="url(#grad1)" stroke-width="2" marker-end="url(#arrow)"/>
+                <path d="M 35 42 L 45 58" stroke="url(#grad1)" stroke-width="2" marker-end="url(#arrow)"/>
+                <defs>
+                    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+                    </linearGradient>
+                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                        <path d="M0,0 L0,6 L9,3 z" fill="#6366f1" />
+                    </marker>
+                </defs>
+            </svg>
+            
+            <h1><span class="gradient-text">FSM Generator</span></h1>
             <p>Transform natural language into visual state diagrams</p>
         </div>
 
         <div class="main-content">
             <!-- Input Panel -->
-            <div class="input-panel">
+            <div class="panel input-panel">
                 <div class="panel-title">
-                    <span class="panel-icon">📝</span>
+                    <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
                     Describe Your System
                 </div>
                 
@@ -377,41 +591,75 @@
                 ></textarea>
 
                 <div class="examples">
-                    <div class="examples-title">💡 Quick Examples</div>
+                    <div class="examples-title">Quick Examples</div>
                     <div class="example-grid" id="exampleGrid"></div>
                 </div>
 
                 <div class="button-group">
                     <button class="btn-primary" id="generateBtn">
-                        <span>✨</span>
-                        Generate Diagram
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                            <line x1="9" y1="9" x2="9.01" y2="9"/>
+                            <line x1="15" y1="9" x2="15.01" y2="9"/>
+                        </svg>
+                        Generate
                     </button>
                     <button class="btn-secondary" id="clearBtn">
-                        <span>🗑️</span>
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
                         Clear
                     </button>
                 </div>
             </div>
 
             <!-- Output Panel -->
-            <div class="output-panel">
+            <div class="panel output-panel">
                 <div class="panel-title">
-                    <span class="panel-icon">📊</span>
+                    <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v6m0 6v6"/>
+                        <circle cx="12" cy="12" r="10"/>
+                    </svg>
                     State Diagram
                 </div>
 
                 <div class="output-container" id="outputContainer">
                     <div class="placeholder" id="placeholder">
-                        <div class="placeholder-icon">🎨</div>
+                        <svg class="placeholder-icon" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="30" cy="50" r="15"/>
+                            <circle cx="70" cy="50" r="15"/>
+                            <path d="M 42 50 L 58 50" marker-end="url(#arrow-placeholder)"/>
+                            <defs>
+                                <marker id="arrow-placeholder" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                    <path d="M0,0 L0,6 L9,3 z" fill="currentColor" />
+                                </marker>
+                            </defs>
+                        </svg>
                         <p>Your FSM diagram will appear here</p>
                     </div>
 
                     <div id="diagramContainer">
                         <div class="diagram-controls">
-                            <button class="control-btn" id="downloadBtn">💾 Download</button>
-                            <button class="control-btn" id="toggleRawBtn">📋 Raw</button>
+                            <button class="control-btn" id="downloadBtn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                    <polyline points="7 10 12 15 17 10"/>
+                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                </svg>
+                                Download
+                            </button>
+                            <button class="control-btn" id="toggleRawBtn">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="16 18 22 12 16 6"/>
+                                    <polyline points="8 6 2 12 8 18"/>
+                                </svg>
+                                Raw
+                            </button>
                         </div>
-                        <svg id="diagram" width="100%" height="100%" viewBox="0 0 600 400"></svg>
+                        <svg id="diagram" width="100%" height="100%" viewBox="0 0 800 600"></svg>
                     </div>
                 </div>
 
@@ -499,10 +747,10 @@
                 throw new Error('No states found in FSM output');
             }
 
-            const width = 600;
-            const height = 400;
-            const nodeRadius = 45;
-            const padding = 80;
+            const width = 800;
+            const height = 600;
+            const nodeRadius = 50;
+            const padding = 100;
 
             // Clear previous diagram
             diagram.innerHTML = '';
